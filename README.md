@@ -1,0 +1,149 @@
+# MCP Stock Tracker
+
+A Model Context Protocol (MCP) server that provides real-time stock price tracking with an interactive dashboard.
+
+## Features
+
+- Real-time stock quotes using Alpha Vantage API
+- Interactive web dashboard for tracking multiple stocks
+- Auto-refresh every 30 seconds
+- Beautiful, responsive UI with gradient design
+- Track price changes, volume, and daily high/low
+- Easy-to-use watchlist management
+
+## Installation
+
+### From PyPI
+
+```bash
+pip install mcp-stock-tracker
+```
+
+### From Source
+
+```bash
+git clone https://github.com/yourusername/mcp-stock-tracker.git
+cd mcp-stock-tracker
+pip install -e .
+```
+
+## Usage
+
+### As a Standalone Script
+
+You can run the server directly using `uvx`:
+
+```bash
+uvx stock_tracker.py
+```
+
+### As an Installed Package
+
+After installation:
+
+```bash
+stock-tracker
+```
+
+### With Goose or Other MCP Clients
+
+Configure your MCP client to use this server. The server provides:
+
+- **Tool**: `get_stock_quote` - Fetch real-time stock data
+- **Resource**: `ui://stock-tracker/dashboard` - Interactive dashboard UI
+
+## API Key Setup
+
+This app uses the Alpha Vantage API for stock data. The default configuration uses the "demo" API key which works with limited symbols (IBM, AAPL, etc.).
+
+For full functionality:
+
+1. Get a free API key at https://www.alphavantage.co/support/#api-key
+2. Set the `API_KEY` variable in the code or use an environment variable:
+
+```bash
+export ALPHA_VANTAGE_API_KEY="your-key-here"
+```
+
+**Rate Limits**:
+- Free tier: 5 requests/minute, 100 requests/day
+- Premium tiers available for higher limits
+
+## Dashboard Features
+
+The interactive dashboard includes:
+
+- **Add Stocks**: Enter any stock symbol to add to your watchlist
+- **Live Updates**: Prices refresh automatically every 30 seconds
+- **Price Changes**: Visual indicators showing gains (green) and losses (red)
+- **Detailed Info**: View open, high, low, and volume data
+- **Easy Management**: Remove stocks from your watchlist with one click
+
+## Development
+
+### Setup Development Environment
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/mcp-stock-tracker.git
+cd mcp-stock-tracker
+
+# Install with dev dependencies
+pip install -e ".[dev]"
+```
+
+### Run Tests
+
+```bash
+pytest
+```
+
+### Code Formatting
+
+```bash
+# Format code
+black src/
+
+# Lint code
+ruff check src/
+```
+
+## Project Structure
+
+```
+mcp-stock-tracker/
+├── src/
+│   └── stock_tracker/
+│       ├── __init__.py
+│       └── server.py
+├── tests/
+├── pyproject.toml
+├── README.md
+├── LICENSE
+└── .gitignore
+```
+
+## Requirements
+
+- Python 3.10+
+- mcp>=0.1.0
+- httpx>=0.24.0
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Support
+
+If you encounter any issues or have questions:
+- Open an issue on GitHub
+- Check the documentation at https://github.com/yourusername/mcp-stock-tracker
+
+## Acknowledgments
+
+- Built with [FastMCP](https://github.com/jlowin/fastmcp)
+- Stock data provided by [Alpha Vantage](https://www.alphavantage.co/)
