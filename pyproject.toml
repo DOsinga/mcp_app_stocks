@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-stock-tracker"
-version = "0.1.0"
+version = "0.2"
 description = "MCP server providing real-time stock price tracking with an interactive dashboard"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Douwe Osinga", email = "douwe.osinga@gmail.com"}
 ]
 keywords = ["mcp", "stocks", "finance", "dashboard", "real-time"]
 classifiers = [
@@ -40,13 +40,13 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/mcp-stock-tracker"
-Documentation = "https://github.com/yourusername/mcp-stock-tracker#readme"
-Repository = "https://github.com/yourusername/mcp-stock-tracker"
-Issues = "https://github.com/yourusername/mcp-stock-tracker/issues"
+Homepage = "https://github.com/DOsinga/mcp_app_stocks"
+Documentation = "https://github.com/DOsinga/mcp_app_stocks#readme"
+Repository = "https://github.com/DOsinga/mcp_app_stocks"
+Issues = "https://github.com/DOsinga/mcp_app_stocks/issues"
 
 [project.scripts]
-stock-tracker = "stock_tracker.server:main"
+mcp-stock-tracker = "stock_tracker.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/stock_tracker"]

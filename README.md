@@ -59,8 +59,8 @@ This server requires an Alpha Vantage API key to fetch stock data.
 ## Development
 
 ```bash
-git clone https://github.com/yourusername/mcp-stock-tracker.git
-cd mcp-stock-tracker
+git clone https://github.com/DOsinga/mcp_app_stocks.git
+cd mcp_app_stocks
 pip install -e ".[dev]"
 ```
 
