@@ -1,19 +1,32 @@
+# /// script
+# dependencies = [
+#   "fastmcp",
+#   "httpx",
+# ]
+# ///
+
 """
 Stock Tracker MCP Server
 Provides real-time stock price tracking with an interactive dashboard.
 """
 
 import os
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 import httpx
-from datetime import datetime
+from fastmcp.tools.tool import ToolResult
+from mcp.types import TextContent
 
 # Initialize MCP server
 mcp = FastMCP("stock-tracker")
 
 # API Configuration
-# Get API key from environment or use demo key
-API_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "demo")
+# Get API key from environment variable (required)
+API_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY")
+if not API_KEY:
+    raise ValueError(
+        "ALPHA_VANTAGE_API_KEY environment variable is required. "
+        "Get a free API key at https://www.alphavantage.co/support/#api-key"
+    )
 
 # Dashboard HTML
 STOCK_DASHBOARD_HTML = """<!DOCTYPE html>
@@ -219,6 +232,98 @@ STOCK_DASHBOARD_HTML = """<!DOCTYPE html>
 
     <script type="module">
         let watchlist = [];
+        let mcpReady = false;
+        let requestId = 1;
+        const pendingRequests = new Map();
+
+        // MCP client using postMessage (JSON-RPC 2.0)
+        function callTool(name, args) {
+            return new Promise((resolve, reject) => {
+                const id = requestId++;
+                pendingRequests.set(id, { resolve, reject });
+
+                window.parent.postMessage({
+                    jsonrpc: '2.0',
+                    id: id,
+                    method: 'tools/call',
+                    params: {
+                        name: name,
+                        arguments: args
+                    }
+                }, '*');
+
+                // Timeout after 30 seconds
+                setTimeout(() => {
+                    if (pendingRequests.has(id)) {
+                        pendingRequests.delete(id);
+                        reject(new Error('Request timeout'));
+                    }
+                }, 30000);
+            });
+        }
+
+        // Handle messages from host
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+            if (!data || typeof data !== 'object') return;
+
+            // Handle responses to our requests
+            if (data.id && pendingRequests.has(data.id)) {
+                const { resolve, reject } = pendingRequests.get(data.id);
+                pendingRequests.delete(data.id);
+
+                if (data.error) {
+                    reject(new Error(data.error.message || 'Tool call failed'));
+                } else {
+                    resolve(data.result);
+                }
+                return;
+            }
+
+            // Handle notifications from host
+            if (data.method === 'ui/notifications/tool-result') {
+                const params = data.params;
+                console.log('Received tool-result notification:', params);
+                if (params.structuredContent && params.structuredContent.symbol) {
+                    const existingIndex = watchlist.findIndex(s => s.symbol === params.structuredContent.symbol);
+                    if (existingIndex >= 0) {
+                        watchlist[existingIndex] = params.structuredContent;
+                    } else {
+                        watchlist.push(params.structuredContent);
+                    }
+                    renderWatchlist();
+                }
+                return;
+            }
+
+            // Handle initialization response
+            if (data.id !== undefined && data.result && data.result.protocolVersion) {
+                mcpReady = true;
+                console.log('MCP initialized:', data.result);
+
+                // Send initialized notification as required by spec
+                window.parent.postMessage({
+                    jsonrpc: '2.0',
+                    method: 'ui/notifications/initialized'
+                }, '*');
+
+                renderWatchlist();
+            }
+        });
+
+        // Initialize MCP connection
+        window.parent.postMessage({
+            jsonrpc: '2.0',
+            id: 0,
+            method: 'ui/initialize',
+            params: {
+                protocolVersion: '2025-06-18',
+                clientInfo: {
+                    name: 'stock-tracker',
+                    version: '1.0.0'
+                }
+            }
+        }, '*');
 
         async function addStock() {
             const input = document.getElementById('symbol-input');
@@ -236,17 +341,13 @@ STOCK_DASHBOARD_HTML = """<!DOCTYPE html>
             hideError();
 
             try {
-                if (window.mcp) {
-                    const result = await window.mcp.callTool('get_stock_quote', { symbol });
+                const result = await callTool('get_stock_quote', { symbol });
 
-                    if (result.structuredContent && result.structuredContent.symbol) {
-                        watchlist.push(result.structuredContent);
-                        renderWatchlist();
-                    } else {
-                        showError('Failed to fetch stock data');
-                    }
+                if (result.structuredContent && result.structuredContent.symbol) {
+                    watchlist.push(result.structuredContent);
+                    renderWatchlist();
                 } else {
-                    showError('MCP not available - run in Goose');
+                    showError('Failed to fetch stock data');
                 }
             } catch (error) {
                 showError(error.message || 'Failed to fetch stock');
@@ -261,13 +362,13 @@ STOCK_DASHBOARD_HTML = """<!DOCTYPE html>
         }
 
         async function refreshAll() {
-            if (!window.mcp || watchlist.length === 0) return;
+            if (!mcpReady || watchlist.length === 0) return;
 
             showLoading(true);
 
             for (let i = 0; i < watchlist.length; i++) {
                 try {
-                    const result = await window.mcp.callTool('get_stock_quote', {
+                    const result = await callTool('get_stock_quote', {
                         symbol: watchlist[i].symbol
                     });
                     if (result.structuredContent) {
@@ -353,37 +454,21 @@ STOCK_DASHBOARD_HTML = """<!DOCTYPE html>
         window.addStock = addStock;
         window.removeStock = removeStock;
 
-        // Auto-refresh every 30 seconds
-        setInterval(refreshAll, 30000);
-
-        // Initial load with some demo stocks
-        window.addEventListener('mcp-ready', async () => {
-            const demoSymbols = ['AAPL', 'MSFT', 'GOOGL'];
-            for (const symbol of demoSymbols) {
-                try {
-                    const result = await window.mcp.callTool('get_stock_quote', { symbol });
-                    if (result.structuredContent) {
-                        watchlist.push(result.structuredContent);
-                    }
-                } catch (e) {
-                    console.log('Could not load demo stock', symbol);
-                }
-            }
-            renderWatchlist();
-        });
+        // Auto-refresh every 60 seconds
+        setInterval(refreshAll, 60000);
     </script>
 </body>
 </html>"""
 
 
 @mcp.resource("ui://stock-tracker/dashboard")
-def get_dashboard() -> str:
-    """Stock tracking dashboard UI"""
+def stock_tracker() -> str:
+    """Real time stock tracker"""
     return STOCK_DASHBOARD_HTML
 
 
 @mcp.tool()
-async def get_stock_quote(symbol: str) -> dict:
+async def get_stock_quote(symbol: str) -> ToolResult:
     """
     Get real-time stock quote for a symbol
 
@@ -393,6 +478,17 @@ async def get_stock_quote(symbol: str) -> dict:
     Returns:
         Dictionary containing stock quote data including price, change, volume, etc.
     """
+    result = await call_api(symbol)
+    return ToolResult(
+        content=[TextContent(type="text", text=f"Retrieved stock quote for {symbol}: ${result['price']:.2f}")],
+        structured_content=result,
+        meta={
+            "ui": {"resourceUri": "ui://stock-tracker/dashboard"},
+            "ui/resourceUri": "ui://stock-tracker/dashboard"
+        }
+    )
+
+async def call_api(symbol: str) -> dict:
     async with httpx.AsyncClient() as client:
         url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={API_KEY}"
         response = await client.get(url)

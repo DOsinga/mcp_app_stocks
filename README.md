@@ -52,22 +52,48 @@ Configure your MCP client to use this server. The server provides:
 - **Tool**: `get_stock_quote` - Fetch real-time stock data
 - **Resource**: `ui://stock-tracker/dashboard` - Interactive dashboard UI
 
-## API Key Setup
+## Configuration
 
-This app uses the Alpha Vantage API for stock data. The default configuration uses the "demo" API key which works with limited symbols (IBM, AAPL, etc.).
+This server requires an Alpha Vantage API key to fetch stock data.
 
-For full functionality:
+### Environment Variables
 
-1. Get a free API key at https://www.alphavantage.co/support/#api-key
-2. Set the `API_KEY` variable in the code or use an environment variable:
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ALPHA_VANTAGE_API_KEY` | **Yes** | Your Alpha Vantage API key |
 
+### Getting an API Key
+
+1. Visit <https://www.alphavantage.co/support/#api-key>
+2. Sign up for a free API key
+3. Set the environment variable before running the server
+
+### Example Configuration
+
+**Shell:**
 ```bash
-export ALPHA_VANTAGE_API_KEY="your-key-here"
+export ALPHA_VANTAGE_API_KEY="your-api-key-here"
+stock-tracker
 ```
 
-**Rate Limits**:
-- Free tier: 5 requests/minute, 100 requests/day
-- Premium tiers available for higher limits
+**MCP Client Configuration (e.g., Claude Desktop, Goose):**
+```json
+{
+  "mcpServers": {
+    "stock-tracker": {
+      "command": "stock-tracker",
+      "env": {
+        "ALPHA_VANTAGE_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### Rate Limits
+
+- **Free tier**: 25 requests/day
+- **Premium tiers**: Higher limits available at <https://www.alphavantage.co/premium/>
 
 ## Dashboard Features
 
