@@ -13,6 +13,12 @@ A Model Context Protocol (MCP) server that provides real-time stock price tracki
 
 ## Installation
 
+### Install in Goose
+
+[![Install in Goose](https://block.github.io/goose/img/extension-install-dark.svg)](https://block.github.io/goose/extension?cmd=uvx&arg=mcp-stock-tracker&id=mcp-stock-tracker&name=MCP%20Stock%20Tracker&description=Real-time%20stock%20price%20tracking%20with%20an%20interactive%20dashboard)
+
+Or install manually: Go to `Advanced settings` -> `Extensions` -> `Add custom extension`. Name to your liking, use type `STDIO`, and set the `command` to `uvx mcp-stock-tracker`. Click "Add Extension".
+
 ### From PyPI
 
 ```bash
